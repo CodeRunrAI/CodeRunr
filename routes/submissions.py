@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.session import get_async_db
+from db.models import Submission
 from db.repository.submissions import (
     create_submission,
     get_submission_by_token,
@@ -22,13 +23,13 @@ from schema.submission import (
     SubmissionBatchCreate,
     SubmissionBatchResponse,
 )
-from worker.tasks import process_submission
+from worker.tasks import submit_submission_task
 
 
 router = APIRouter(prefix="/submissions", tags=["Submissions"])
 
 
-def _row_to_response(row) -> SubmissionResponse:
+def _row_to_response(row: Submission) -> SubmissionResponse:
     """Convert an ORM Submission row to a SubmissionResponse."""
     return SubmissionResponse(
         token=row.token,
@@ -67,7 +68,7 @@ async def create_submission_endpoint(
 ):
     """Create a new submission and enqueue it for processing."""
     row = await create_submission(db, body)
-    process_submission.delay(str(row.token))
+    submit_submission_task.delay(str(row.token))
     return _row_to_response(row)
 
 
@@ -90,7 +91,7 @@ async def create_submission_batch_endpoint(
     """Create a batch of submissions and enqueue them all for processing."""
     batch = await create_submission_batch(db, body.submissions)
     for sub in batch.submissions:
-        process_submission.delay(str(sub.token))
+        submit_submission_task.delay(str(sub.token))
     return SubmissionBatchResponse(
         token=batch.token,
         submissions=[_row_to_response(s) for s in batch.submissions],

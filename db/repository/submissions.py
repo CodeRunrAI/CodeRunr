@@ -9,34 +9,33 @@ from db.models.submission_batch import SubmissionBatch
 from schema.submission import SubmissionCreate
 
 
-async def create_submission(
-    db: AsyncSession,
-    data: SubmissionCreate,
-    batch_token: UUID | None = None,
-) -> Submission:
+async def create_submission(db: AsyncSession, data: SubmissionCreate) -> Submission:
     """
     Create a new submission record into database.
     """
-    submission = Submission(
-        source_code=data.source_code,
-        language_id=data.language_id,
-        stdin=data.stdin,
-        expected_output=data.expected_output,
-        cpu_time_limit=data.cpu_time_limit,
-        cpu_extra_time=data.cpu_extra_time,
-        wall_time_limit=data.wall_time_limit,
-        memory_limit=data.memory_limit,
-        stack_limit=data.stack_limit,
-        max_file_size=data.max_file_size,
-        max_processes_and_or_threads=data.max_processes_and_or_threads,
-        enable_per_process_and_thread_time_limit=data.enable_per_process_and_thread_time_limit,
-        enable_per_process_and_thread_memory_limit=data.enable_per_process_and_thread_memory_limit,
-        batch_token=batch_token,
-    )
-    db.add(submission)
-    await db.commit()
-    await db.refresh(submission)
-    return submission
+    try:
+        submission = Submission(
+            source_code=data.source_code,
+            language_id=data.language_id,
+            stdin=data.stdin,
+            expected_output=data.expected_output,
+            cpu_time_limit=data.cpu_time_limit,
+            cpu_extra_time=data.cpu_extra_time,
+            wall_time_limit=data.wall_time_limit,
+            memory_limit=data.memory_limit,
+            stack_limit=data.stack_limit,
+            max_file_size=data.max_file_size,
+            max_processes_and_or_threads=data.max_processes_and_or_threads,
+            enable_per_process_and_thread_time_limit=data.enable_per_process_and_thread_time_limit,
+            enable_per_process_and_thread_memory_limit=data.enable_per_process_and_thread_memory_limit,
+        )
+        db.add(submission)
+        await db.commit()
+        await db.refresh(submission)
+        return submission
+    except Exception:
+        await db.rollback()
+        raise
 
 
 async def get_submission_by_token(db: AsyncSession, token: UUID) -> Submission | None:
@@ -102,34 +101,38 @@ async def create_submission_batch(
     submissions_data: list[SubmissionCreate],
 ) -> SubmissionBatch:
     """Create a batch and all its submissions in one transaction."""
-    batch = SubmissionBatch()
-    db.add(batch)
-    await db.flush()
+    try:
+        batch = SubmissionBatch()
+        db.add(batch)
+        await db.flush()
 
-    submissions = []
-    for data in submissions_data:
-        sub = Submission(
-            source_code=data.source_code,
-            language_id=data.language_id,
-            stdin=data.stdin,
-            expected_output=data.expected_output,
-            cpu_time_limit=data.cpu_time_limit,
-            cpu_extra_time=data.cpu_extra_time,
-            wall_time_limit=data.wall_time_limit,
-            memory_limit=data.memory_limit,
-            stack_limit=data.stack_limit,
-            max_file_size=data.max_file_size,
-            max_processes_and_or_threads=data.max_processes_and_or_threads,
-            enable_per_process_and_thread_time_limit=data.enable_per_process_and_thread_time_limit,
-            enable_per_process_and_thread_memory_limit=data.enable_per_process_and_thread_memory_limit,
-            batch_token=batch.token,
-        )
-        submissions.append(sub)
+        submissions = []
+        for data in submissions_data:
+            sub = Submission(
+                source_code=data.source_code,
+                language_id=data.language_id,
+                stdin=data.stdin,
+                expected_output=data.expected_output,
+                cpu_time_limit=data.cpu_time_limit,
+                cpu_extra_time=data.cpu_extra_time,
+                wall_time_limit=data.wall_time_limit,
+                memory_limit=data.memory_limit,
+                stack_limit=data.stack_limit,
+                max_file_size=data.max_file_size,
+                max_processes_and_or_threads=data.max_processes_and_or_threads,
+                enable_per_process_and_thread_time_limit=data.enable_per_process_and_thread_time_limit,
+                enable_per_process_and_thread_memory_limit=data.enable_per_process_and_thread_memory_limit,
+                batch_token=batch.token,
+            )
+            submissions.append(sub)
 
-    db.add_all(submissions)
-    await db.commit()
-    await db.refresh(batch)
-    return batch
+        db.add_all(submissions)
+        await db.commit()
+        await db.refresh(batch)
+        return batch
+    except Exception:
+        await db.rollback()
+        raise
 
 
 async def get_submission_batch_by_token(

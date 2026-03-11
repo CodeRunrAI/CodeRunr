@@ -6,9 +6,9 @@ from .config import Config
 from .schema import Status, Submission
 
 
-class IsolateJob:
+class IsolateCodeSanbox:
     """
-    IsolateJob is a class that is used to run the code in a sandbox.
+    IsolateCodeSanbox is a class that is used to run the code in a sandbox.
     """
 
     STDIN_FILE_NAME = "stdin.txt"
@@ -30,17 +30,17 @@ class IsolateJob:
             else ""
         )
 
-    def run_job(self):
+    def process_and_execute(self):
         """Process and then clean the created sandbox environment"""
-        self.initialize_workdir()
+        self.initialize_workdirs()
 
-        if self.compile():
-            self.run()  # Run the code
-            self.verify()
+        if self.compile_code():
+            self.run_code()  # Run the code
+            self.verify_result()
         else:
             self.submission.status = Status.comerr
 
-        self.cleanup()
+        self.do_cleanup()
 
     def run_command(self, cmd, shell=False):
         """
@@ -51,7 +51,7 @@ class IsolateJob:
         )
         return result
 
-    def initialize_workdir(self):
+    def initialize_workdirs(self):
         """
         Initialize the sandbox and create all necessary files and folders.
         """
@@ -88,7 +88,7 @@ class IsolateJob:
         with open(self.stdin_file, "w") as f:
             f.write(self.submission.stdin)
 
-    def compile(self):
+    def compile_code(self):
         # If not compile command is present
         if not self.submission.language.compile_cmd:
             return True
@@ -134,7 +134,7 @@ class IsolateJob:
 
         return True if process.returncode == 0 else False
 
-    def run(self):
+    def run_code(self):
         run_script = self.boxdir / "run.sh"
 
         # Create bash script for the actual runner process
@@ -160,7 +160,7 @@ class IsolateJob:
 
         self.run_command(command, shell=True)
 
-    def verify(self):
+    def verify_result(self):
         metadata = self.get_metadata()
 
         self.submission.stdout = self.stdout_file.read_text()
@@ -174,7 +174,7 @@ class IsolateJob:
         self.submission.exit_code = int(metadata.get("exitcode", "0"))
         self.submission.exit_signal = int(metadata.get("exitsig", "0"))
         self.submission.message = metadata.get("message", "")
-        self.submission.status = self.determine_status(
+        self.submission.status = self.extract_status(
             metadata.get("status", ""), self.submission.exit_signal
         )
 
@@ -187,7 +187,7 @@ class IsolateJob:
         }
         return metadata
 
-    def determine_status(self, status: str, exitsig: int):
+    def extract_status(self, status: str, exitsig: int):
         if status == "TO":
             return Status.tle
         elif status == "SG":
@@ -229,7 +229,7 @@ class IsolateJob:
         else:
             return Status.wans
 
-    def cleanup(self):
+    def do_cleanup(self):
         self.run_command(f"chown -R $(whoami): {self.boxdir}", shell=True)
         self.run_command(f"rm -rf {self.boxdir}/* {self.tmpdir}/*", shell=True)
         for f in [

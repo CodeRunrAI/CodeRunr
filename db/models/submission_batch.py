@@ -1,9 +1,12 @@
 import uuid
 from datetime import datetime
+from typing import List, TYPE_CHECKING
 
-from sqlalchemy import Column, Integer, DateTime, Uuid
-from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
+from sqlalchemy import func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+if TYPE_CHECKING:
+    from .submission import Submission
 
 from db.base import Base
 
@@ -11,14 +14,18 @@ from db.base import Base
 class SubmissionBatch(Base):
     __tablename__ = "submission_batches"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    token = Column(Uuid, unique=True, nullable=False, default=uuid.uuid4, index=True)
-    created_at = Column(
-        DateTime(timezone=True), default=lambda: datetime.now(datetime.UTC)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    token: Mapped[uuid.UUID] = mapped_column(
+        unique=True, default=uuid.uuid4, index=True
     )
 
     # Timestamps
-    created_at = Column(DateTime, server_default=func.now())
-    updated_at = Column(DateTime, onupdate=func.now(), server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        onupdate=func.now(), server_default=func.now()
+    )
 
-    submissions = relationship("Submission", back_populates="batch", lazy="selectin")
+    # Submissions
+    submissions: Mapped[List["Submission"]] = relationship(
+        back_populates="batch", cascade="all,delete-orphan"
+    )

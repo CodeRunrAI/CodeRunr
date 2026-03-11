@@ -4,15 +4,15 @@ from datetime import datetime, timezone
 
 from db.session import SyncSessionLocal
 from db.repository.sync_queries import get_submission_by_token_sync, get_language_sync
-from job.schema import Submission, SubmissionLanguage, Status
-from job.isolate_job import IsolateJob
+from sandbox.schema import Submission, SubmissionLanguage, Status
+from sandbox.isolate import IsolateCodeSanbox
 from .celery import app
 
 logger = logging.getLogger(__name__)
 
 
 @app.task
-def process_submission(submission_token: str) -> None:
+def submit_submission_task(submission_token: str) -> str:
     """
     Main task function invoked by the Celery worker.
 
@@ -61,8 +61,9 @@ def process_submission(submission_token: str) -> None:
             )
 
             # Run in sandbox
-            job = IsolateJob(submission)
-            job.run_job()
+            sandbox = IsolateCodeSanbox(submission)
+            # This will update the submission object
+            sandbox.process_and_execute()
 
             # Write results back
             row.status = submission.status.value
@@ -80,6 +81,8 @@ def process_submission(submission_token: str) -> None:
             db.commit()
             logger.info("Submission %s processed → %s", token, row.status)
 
+            return f"Submission successful {token}"
+
     except Exception:
         logger.exception("Failed to process submission %s", token)
         # Mark as internal error using a fresh session
@@ -92,3 +95,5 @@ def process_submission(submission_token: str) -> None:
                     db.commit()
         except Exception:
             logger.exception("Failed to mark submission %s as errored", token)
+
+        return f"Submission failed {token}"
