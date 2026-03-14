@@ -4,7 +4,6 @@ from config import settings
 from .submissions import router as submissions_router
 from .languages import router as languages_router
 
-
 api_router = APIRouter(prefix=settings.API_V1_STR)
 
 

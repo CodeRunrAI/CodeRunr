@@ -23,12 +23,12 @@ C, C++, Python, JavaScript, TypeScript, Java, Go, Rust
 ### Run
 
 ```bash
-docker compose up --build
+docker compose up -d --build
 ```
 
-The API will be available at `http://localhost:8000`.
+The API will be available at `http://localhost:8080`.
 
-- Docs — [http://localhost:8000/docs](http://localhost:8000/docs)
+- Docs — [http://localhost:8000/docs](http://localhost:8080/docs)
 - Health — `GET /api/v1/health`
 
 ## API Endpoints
@@ -40,24 +40,3 @@ The API will be available at `http://localhost:8000`.
 | `GET`  | `/api/v1/submissions/{id}` | Get submission result    |
 | `GET`  | `/api/v1/languages`        | List supported languages |
 | `POST` | `/api/v1/languages`        | Add a language           |
-
-## Project Structure
-
-```
-.
-├── main.py            # FastAPI app entrypoint
-├── routes/            # API route handlers
-├── schema/            # Pydantic models
-├── db/                # SQLAlchemy models & migrations
-├── worker/            # Celery tasks
-├── job/               # Isolate sandbox runner
-├── core/              # App config
-├── config/            # Isolate config
-├── scripts/           # Entrypoint scripts
-├── Dockerfile
-└── docker-compose.yml
-```
-
-## License
-
-MIT
