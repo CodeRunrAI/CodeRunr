@@ -26,7 +26,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Typescript using npm
-RUN npm install -g typescript
+RUN npm install -g typescript @types/node ts-node
+ENV NODE_PATH=/usr/local/lib/node_modules
 
 # Build & install isolate
 RUN git clone https://github.com/ioi/isolate.git --branch v2.2 /tmp/isolate \

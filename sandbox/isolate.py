@@ -2,7 +2,7 @@ import re
 import subprocess
 from pathlib import Path
 
-from .config import Config
+from config import settings
 from .schema import Status, Submission
 
 
@@ -96,10 +96,7 @@ class IsolateCodeSanbox:
         compile_script = self.boxdir / "compile.sh"
         # Create a tiny runner script to execute the compiler secure parameters
         with open(compile_script, "w") as f:
-            compile_cmd = (
-                self.submission.language.compile_cmd
-                % self.submission.language.source_file
-            )
+            compile_cmd = self.submission.language.compile_cmd
             f.write(compile_cmd)
 
         compile_output_file = self.workdir / "compile_output.txt"
@@ -109,17 +106,18 @@ class IsolateCodeSanbox:
         )
 
         cg_memeory = (
-            f"--mem={Config.MAX_MEMORY_LIMIT}"
+            f"--mem={settings.sanbox.MAX_MEMORY_LIMIT}"
             if self.submission.limit_per_process_and_thread_memory_usgaes
-            else f"--cg-mem={Config.MAX_MEMORY_LIMIT}"
+            else f"--cg-mem={settings.sanbox.MAX_MEMORY_LIMIT}"
         )
 
         command = f"""isolate {self.cgroups} --silent --box-id={self.box_id} \\
             --meta={self.metadata_file} --stdin=/dev/null --stderr-to-stdout  \\
-            --time={Config.MAX_CPU_TIME_LIMIT} --extra-time=0 --wall-time={Config.MAX_WALL_TIME_LIMIT} \\
-            --stack={Config.MAX_STACK_LIMIT} --processes={Config.MAX_MAX_PROCESSES_AND_OR_THREADS} \\
-            --fsize={Config.MAX_MAX_FILE_SIZE} {cg_memeory} \\
+            --time={settings.sanbox.MAX_CPU_TIME_LIMIT} --extra-time=0 --wall-time={settings.sanbox.MAX_WALL_TIME_LIMIT} \\
+            --stack={settings.sanbox.MAX_STACK_LIMIT} --processes={settings.sanbox.MAX_MAX_PROCESSES_AND_OR_THREADS} \\
+            --fsize={settings.sanbox.MAX_MAX_FILE_SIZE} {cg_memeory} \\
             --env=HOME=/tmp --env=PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \\
+            --env=NODE_PATH=/usr/local/lib/node_modules \\
             --dir=/etc:noexec --run -- /bin/bash {compile_script.name} > {compile_output_file}
         """
 
@@ -154,6 +152,7 @@ class IsolateCodeSanbox:
             --processes={self.submission.max_processes_and_or_threads} \\
             --fsize={self.submission.max_file_size} \\
             --env=HOME=/tmp --env=PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \\
+            --env=NODE_PATH=/usr/local/lib/node_modules \\
             --dir=/etc:noexec --run -- /bin/bash {run_script.name} \\
             < {self.stdin_file} > {self.stdout_file} 2> {self.stderr_file}
         """

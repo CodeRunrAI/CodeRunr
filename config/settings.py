@@ -1,7 +1,22 @@
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import SecretStr
+from pydantic import BaseModel, SecretStr
+
+
+class SandboxConfig(BaseModel):
+    MAX_STACK_LIMIT: int = 64 * 1024
+    """Max Stack limit in KB"""
+    MAX_MEMORY_LIMIT: int = 256 * 1024
+    """Max memory limit in KB"""
+    MAX_CPU_TIME_LIMIT: float = 10
+    """Max CPU time limit in seconds"""
+    MAX_WALL_TIME_LIMIT: float = 20
+    """Max wall time limit in seconds"""
+    MAX_MAX_FILE_SIZE: int = 10 * 1024
+    """Max file size in KB"""
+    MAX_MAX_PROCESSES_AND_OR_THREADS: int = 64
+    """Max number of process and threads"""
 
 
 class Settings(BaseSettings):
@@ -21,6 +36,8 @@ class Settings(BaseSettings):
     # QUEUE (Redis)
     REDIS_URL: str = "redis://localhost:6379/0"
 
+    # Sandbox settings
+    sanbox: SandboxConfig = SandboxConfig()
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
 

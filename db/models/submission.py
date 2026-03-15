@@ -64,10 +64,10 @@ class Submission(Base):
     cpu_time_limit: Mapped[float] = mapped_column(default=1)
     cpu_extra_time: Mapped[float] = mapped_column(default=1)
     wall_time_limit: Mapped[float] = mapped_column(default=10)
-    memory_limit: Mapped[int] = mapped_column(default=128000)
-    stack_limit: Mapped[int] = mapped_column(default=65536)
-    max_file_size: Mapped[int] = mapped_column(default=1024)
-    max_processes_and_or_threads: Mapped[int] = mapped_column(default=8)
+    memory_limit: Mapped[int] = mapped_column(default=256 * 1024)
+    stack_limit: Mapped[int] = mapped_column(default=64 * 1024)
+    max_file_size: Mapped[int] = mapped_column(default=1 * 1024)
+    max_processes_and_or_threads: Mapped[int] = mapped_column(default=64)
     limit_per_process_and_thread_time_usages: Mapped[bool] = mapped_column(
         default=False
     )

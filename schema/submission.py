@@ -13,10 +13,16 @@ class SubmissionCreate(BaseModel):
     cpu_time_limit: float = Field(default=1, ge=0.1, le=15)
     cpu_extra_time: float = Field(default=1, ge=0, le=5)
     wall_time_limit: float = Field(default=10, ge=0.5, le=30)
-    memory_limit: int = Field(default=128000, ge=2048, le=512000, description="KB")
-    stack_limit: int = Field(default=65536, ge=2048, le=131072, description="KB")
-    max_file_size: int = Field(default=1024, ge=1, le=4096, description="KB")
-    max_processes_and_or_threads: int = Field(default=8, ge=1, le=128)
+    memory_limit: int = Field(
+        default=256 * 1024, ge=10 * 1024, le=512 * 1024, description="KB"
+    )
+    stack_limit: int = Field(
+        default=64 * 1024, ge=10 * 1024, le=512 * 1024, description="KB"
+    )
+    max_file_size: int = Field(
+        default=1 * 1024, ge=1 * 1024, le=20 * 1024, description="KB"
+    )
+    max_processes_and_or_threads: int = Field(default=64, ge=1, le=128)
     limit_per_process_and_thread_time_usages: bool = False
     limit_per_process_and_thread_memory_usgaes: bool = False
 

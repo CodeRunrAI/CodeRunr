@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 
 class Status(str, Enum):
-    queue = "Queued"
+    queued = "Queued"
     process = "Processing"
     acc = "Accepted"
     wans = "Wrong Answer"
@@ -49,7 +49,7 @@ class Submission(BaseModel):
     exit_code: Optional[int] = None
     exit_signal: Optional[int] = None
     message: Optional[str] = None
-    status: Status = Status.queue
+    status: Status = Status.queued
     cpu_time_limit: int
     cpu_extra_time: int
     wall_time_limit: int

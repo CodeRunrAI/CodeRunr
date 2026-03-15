@@ -12,7 +12,7 @@ LANGUAGES = [
         "name": "C",
         "version": "GCC 13.3.0",
         "source_file": "main.c",
-        "compile_cmd": "gcc -o main %s -lm",
+        "compile_cmd": "gcc -o main main.c -lm",
         "run_cmd": "./main",
     },
     {
@@ -20,7 +20,7 @@ LANGUAGES = [
         "name": "C++",
         "version": "GCC 13.3.0",
         "source_file": "main.cpp",
-        "compile_cmd": "g++ -o main %s -std=c++17",
+        "compile_cmd": "g++ -o main main.cpp -std=c++17",
         "run_cmd": "./main",
     },
     {
@@ -28,7 +28,7 @@ LANGUAGES = [
         "name": "Python",
         "version": "3.12.3",
         "source_file": "main.py",
-        "compile_cmd": "python3 -m py_compile %s",
+        "compile_cmd": "python3 -m py_compile main.py",
         "run_cmd": "python3 main.py",
     },
     {
@@ -44,7 +44,7 @@ LANGUAGES = [
         "name": "TypeScript",
         "version": "5.7.3",
         "source_file": "main.ts",
-        "compile_cmd": "tsc %s --outDir .",
+        "compile_cmd": "tsc main.ts --typeRoots $NODE_PATH/@types --types node",
         "run_cmd": "node main.js",
     },
     {
@@ -52,7 +52,7 @@ LANGUAGES = [
         "name": "Go",
         "version": "1.22.2",
         "source_file": "main.go",
-        "compile_cmd": "go build -o main %s",
+        "compile_cmd": "go build -o main main.go",
         "run_cmd": "./main",
     },
     {
@@ -60,7 +60,7 @@ LANGUAGES = [
         "name": "Rust",
         "version": "1.75.0",
         "source_file": "main.rs",
-        "compile_cmd": "rustc -o main %s",
+        "compile_cmd": "rustc -o main main.rs",
         "run_cmd": "./main",
     },
     {
@@ -68,7 +68,7 @@ LANGUAGES = [
         "name": "Java",
         "version": "OpenJDK 21.0.5",
         "source_file": "Main.java",
-        "compile_cmd": "javac %s",
+        "compile_cmd": "javac Main.java",
         "run_cmd": "java Main",
     },
 ]
