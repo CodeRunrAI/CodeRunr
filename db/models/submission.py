@@ -1,16 +1,13 @@
 import uuid
 from enum import Enum
 from datetime import datetime
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, List
 
 from sqlalchemy import String, Text, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from db.base import Base
-
-if TYPE_CHECKING:
-    from .submission_batch import SubmissionBatch
 
 
 class SubmissionStatus(str, Enum):
@@ -87,3 +84,23 @@ class Submission(Base):
         ForeignKey("submission_batches.id", ondelete="CASCADE")
     )
     batch: Mapped["SubmissionBatch"] = relationship(back_populates="submissions")
+
+
+class SubmissionBatch(Base):
+    __tablename__ = "submission_batches"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    token: Mapped[uuid.UUID] = mapped_column(
+        unique=True, default=uuid.uuid4, index=True
+    )
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        onupdate=func.now(), server_default=func.now()
+    )
+
+    # Submissions
+    submissions: Mapped[List["Submission"]] = relationship(
+        back_populates="batch", cascade="all,delete-orphan", lazy="selectin"
+    )

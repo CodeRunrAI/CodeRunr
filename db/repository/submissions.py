@@ -4,8 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from db.models.submission import Submission
-from db.models.submission_batch import SubmissionBatch
+from db.models.submission import Submission, SubmissionBatch
 from schema.submission import SubmissionCreate
 
 
@@ -130,6 +129,9 @@ async def create_submission_batch(
                 limit_per_process_and_thread_memory_usgaes=data.limit_per_process_and_thread_memory_usgaes,
                 batch_id=batch.id,
             )
+            if data.token:
+                setattr(sub, "token", data.token)
+
             submissions.append(sub)
 
         db.add_all(submissions)
