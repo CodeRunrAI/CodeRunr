@@ -42,9 +42,7 @@ class Settings(BaseSettings):
     LOG_FORMAT: str = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
 
     # This auth token will be used to authenticate every client request
-    AUTH_TOKEN: str = "sk-proj-j37dSJD638SHkj3h62djwZgd36djk2862bfDjkGAjd"
-    NON_AUTH_PATHS: list[str] = ["/docs", "/openapi.json", "/api/v1/health"]
-
+    AUTH_TOKEN: SecretStr = SecretStr("change-me")
     # DATABASE
     POSTGRES_HOST: SecretStr
     POSTGRES_PORT: int

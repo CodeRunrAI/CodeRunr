@@ -31,6 +31,22 @@ The API will be available at `http://localhost:8080`.
 - Docs — [http://localhost:8000/docs](http://localhost:8080/docs)
 - Health — `GET /api/v1/health`
 
+## Authentication
+
+All API endpoints except docs, OpenAPI, and health require an API token.
+
+Set `AUTH_TOKEN` in your `.env` file and send it on each protected request using either:
+
+```bash
+X-API-Key: <your-auth-token>
+```
+
+or:
+
+```bash
+Authorization: Bearer <your-auth-token>
+```
+
 ## API Endpoints
 
 | Method | Endpoint                   | Description              |

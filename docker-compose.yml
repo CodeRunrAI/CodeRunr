@@ -36,6 +36,7 @@ services:
       POSTGRES_PASSWORD: sandbox
       POSTGRES_DB: coderunr
       REDIS_URL: redis://redis:6379/0
+      AUTH_TOKEN: coderunr_4a9f6b0d2c8e1f7345ab91c6d3ef2807
     ports:
       - 8080:8000
     depends_on:
