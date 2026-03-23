@@ -86,7 +86,9 @@ class Submission(Base):
     batch_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("submission_batches.id", ondelete="CASCADE")
     )
-    batch: Mapped[Optional["SubmissionBatch"]] = relationship(back_populates="submissions")
+    batch: Mapped[Optional["SubmissionBatch"]] = relationship(
+        back_populates="submissions"
+    )
 
 
 class SubmissionBatch(Base):

@@ -29,7 +29,9 @@ async def create_submission(
             max_processes_and_or_threads=submission_create.max_processes_and_or_threads,
             limit_per_process_and_thread_cpu_time_usages=submission_create.limit_per_process_and_thread_cpu_time_usages,
             limit_per_process_and_thread_memory_usages=submission_create.limit_per_process_and_thread_memory_usages,
-            webhook_url=str(submission_create.webhook_url) if submission_create.webhook_url else None,
+            webhook_url=str(submission_create.webhook_url)
+            if submission_create.webhook_url
+            else None,
         )
 
         if submission_create.token:

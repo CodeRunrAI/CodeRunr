@@ -106,16 +106,16 @@ class IsolateCodeSandbox:
         )
 
         cg_memory = (
-            f"--mem={settings.sandbox.MAX_MEMORY_LIMIT}"
+            f"--mem={settings.SANDBOX.MAX_MEMORY_LIMIT}"
             if self.submission.limit_per_process_and_thread_memory_usages
-            else f"--cg-mem={settings.sandbox.MAX_MEMORY_LIMIT}"
+            else f"--cg-mem={settings.SANDBOX.MAX_MEMORY_LIMIT}"
         )
 
         command = f"""isolate {self.cgroups} --silent --box-id={self.box_id} \\
             --meta={self.metadata_file} --stdin=/dev/null --stderr-to-stdout  \\
-            --time={settings.sandbox.MAX_CPU_TIME_LIMIT} --extra-time=0 --wall-time={settings.sandbox.MAX_WALL_TIME_LIMIT} \\
-            --stack={settings.sandbox.MAX_STACK_LIMIT} --processes={settings.sandbox.MAX_MAX_PROCESSES_AND_OR_THREADS} \\
-            --fsize={settings.sandbox.MAX_MAX_FILE_SIZE} {cg_memory} \\
+            --time={settings.SANDBOX.MAX_CPU_TIME_LIMIT} --extra-time=0 --wall-time={settings.SANDBOX.MAX_WALL_TIME_LIMIT} \\
+            --stack={settings.SANDBOX.MAX_STACK_LIMIT} --processes={settings.SANDBOX.MAX_MAX_PROCESSES_AND_OR_THREADS} \\
+            --fsize={settings.SANDBOX.MAX_MAX_FILE_SIZE} {cg_memory} \\
             --env=HOME=/tmp --env=PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \\
             --env=NODE_PATH=/usr/local/lib/node_modules \\
             --dir=/etc:noexec --run -- /bin/bash {compile_script.name} > {compile_output_file}
