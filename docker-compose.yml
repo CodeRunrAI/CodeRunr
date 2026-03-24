@@ -31,14 +31,15 @@ services:
       dockerfile: Dockerfile.server
     restart: unless-stopped
     environment:
+      ENVIRONMENT: prod
       SERVICE_MODE: api
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
       POSTGRES_USER: sandbox
       POSTGRES_PASSWORD: sandbox
       POSTGRES_DB: coderunr
-      REDIS_URL: redis://redis:6379/0
-      AUTH_TOKEN: coderunr_4a9f6b0d2c8e1f7345ab91c6d3ef2807
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      AUTH_TOKEN: ${AUTH_TOKEN}
     ports:
       - 8080:8000
     depends_on:
@@ -53,13 +54,15 @@ services:
       dockerfile: Dockerfile.worker
     restart: unless-stopped
     environment:
+      ENVIRONMENT: prod
       SERVICE_MODE: worker
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
       POSTGRES_USER: sandbox
       POSTGRES_PASSWORD: sandbox
       POSTGRES_DB: coderunr
-      REDIS_URL: redis://redis:6379/0
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      AUTH_TOKEN: ${AUTH_TOKEN}
     privileged: true
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw

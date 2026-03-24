@@ -1,9 +1,10 @@
 import os
 from pathlib import Path
-from typing import Literal, TypeAlias
+from typing import Literal, TypeAlias, Any
 
-from pydantic import SecretStr
+from pydantic import SecretStr, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from config.celery import CeleryConfig
 from config.sandbox import SandboxConfig
 
 
@@ -30,17 +31,17 @@ class Settings(BaseSettings):
     LOG_FORMAT: str = LOG_FORMAT_STR
 
     # This auth token will be used to authenticate every client request
-    AUTH_TOKEN: SecretStr = SecretStr("change-me")
+    AUTH_TOKEN: SecretStr = Field(..., description="X-API-KEY auth token")
 
-    # DATABASE
-    POSTGRES_HOST: SecretStr
-    POSTGRES_PORT: int
-    POSTGRES_USER: SecretStr
-    POSTGRES_PASSWORD: SecretStr
-    POSTGRES_DB: SecretStr
+    # Database settings
+    POSTGRES_HOST: SecretStr = Field(..., description="Database host")
+    POSTGRES_PORT: int = Field(..., description="Database port")
+    POSTGRES_USER: SecretStr = Field(..., description="Database user")
+    POSTGRES_PASSWORD: SecretStr = Field(..., description="Database password")
+    POSTGRES_DB: SecretStr = Field(..., description="Database name")
 
     # QUEUE/Cache (Redis)
-    REDIS_URL: str = "redis://localhost:6379/0"
+    REDIS_URL: SecretStr = Field(..., description="Redis in-memory db URL")
 
     # Outbound HTTP
     HTTP_TIMEOUT: float = 10.0
@@ -50,13 +51,22 @@ class Settings(BaseSettings):
     HTTP_FOLLOW_REDIRECTS: bool = True
     HTTP_USER_AGENT: str = "CodeRunr/0.1.0"
 
-    # Sandbox settings
-    SANDBOX: SandboxConfig = SandboxConfig()
+    # Sandbox config
+    SANDBOX_CONFIG: SandboxConfig = SandboxConfig()
     model_config = SettingsConfigDict(
-        env_file=".env",
-        case_sensitive=True,
-        extra="ignore",
+        env_file=".env", case_sensitive=True, extra="ignore"
     )
+
+    # Celery config
+    CELERY_CONFIG: CeleryConfig | None = None
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.CELERY_CONFIG is None:
+            redis_url = self.REDIS_URL.get_secret_value()
+            self.CELERY_CONFIG = CeleryConfig(
+                BROKER_URL=redis_url,
+                BACKEND_URL=redis_url,
+            )
 
 
 settings = Settings()
