@@ -3,11 +3,14 @@ Code Execution Sandbox — FastAPI application.
 """
 
 from contextlib import asynccontextmanager
+from typing import Any
 
 from loguru import logger
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
+from pydantic import ValidationError
 
 from schema import APIResponse
 from routes import api_router
@@ -35,6 +38,24 @@ app = FastAPI(
     docs_url="/docs",
     lifespan=lifespan,
 )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    errors = [{"field": err["loc"][-1], "message": err["msg"]} for err in exc.errors()]
+    api_response = APIResponse[Any](
+        status="Error", message="Validation Error", data=errors
+    )
+    return JSONResponse(status_code=422, content=api_response.model_dump())
+
+
+@app.exception_handler(ValidationError)
+async def pydantic_validation_handler(request: Request, exc: ValidationError):
+    errors = [{"field": err["loc"][-1], "message": err["msg"]} for err in exc.errors()]
+    api_response = APIResponse[Any](
+        status="Error", message="Validation Error", data=errors
+    )
+    return JSONResponse(status_code=422, content=api_response.model_dump())
 
 
 @app.exception_handler(HTTPException)

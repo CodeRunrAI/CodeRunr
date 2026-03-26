@@ -129,7 +129,8 @@ async def get_submission_endpoint(
 
     if submission.status in [SubmissionStatus.queued, SubmissionStatus.process]:
         return APIResponse[Dict[str, str]](
-            data={"token": str(submission.token), "status": submission.status}
+            message="Submission data",
+            data={"token": str(submission.token), "status": submission.status},
         )
 
     return APIResponse[SubmissionResponse](
