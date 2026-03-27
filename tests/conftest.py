@@ -1,27 +1,42 @@
-﻿import uuid
+import uuid
+from pathlib import Path
 from typing import AsyncGenerator
 
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient
 from fastapi.testclient import TestClient
-from sqlalchemy.pool import StaticPool
+from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlalchemy.orm import sessionmaker
 
 from main import app
 from db.base import Base
 from db.session import get_async_db
 
-TEST_DATA_URL = "sqlite+aiosqlite:///:memory:"
+TEST_DB_PATH = Path(__file__).resolve().parent.parent / "tmp"
+TEST_DB_PATH.mkdir(exist_ok=True)
+
+TEST_DB_PATH = TEST_DB_PATH / "test.sqlite3"
+TEST_DATA_URL = f"sqlite+aiosqlite:///{TEST_DB_PATH.as_posix()}"
+TEST_SYNC_DATA_URL = f"sqlite:///{TEST_DB_PATH.as_posix()}"
 
 test_engine = create_async_engine(
     TEST_DATA_URL,
     connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
+)
+test_sync_engine = create_engine(
+    TEST_SYNC_DATA_URL,
+    connect_args={"check_same_thread": False},
 )
 
 TestingAsyncSessionLocal = async_sessionmaker(
     bind=test_engine,
+    autoflush=False,
+    autocommit=False,
+)
+TestingSyncSessionLocal = sessionmaker(
+    bind=test_sync_engine,
     autoflush=False,
     autocommit=False,
 )
@@ -40,21 +55,35 @@ async def override_get_db():
 app.dependency_overrides[get_async_db] = override_get_db
 
 
+@pytest.fixture(autouse=True)
+def setup_database():
+    """Create and clean the shared test database for each test."""
+    Base.metadata.drop_all(bind=test_sync_engine)
+    Base.metadata.create_all(bind=test_sync_engine)
+    try:
+        yield
+    finally:
+        Base.metadata.drop_all(bind=test_sync_engine)
+
+
 @pytest_asyncio.fixture(name="db", scope="function")
 async def db_fixture():
-    """Test db session"""
-    # Create all tables before running any test
-    async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    """Async test db session"""
+    async with TestingAsyncSessionLocal() as session:
+        try:
+            yield session
+        finally:
+            await session.close()
 
+
+@pytest.fixture(name="sync_db", scope="function")
+def sync_db_fixture():
+    """Sync test db session"""
+    session = TestingSyncSessionLocal()
     try:
-        session = TestingAsyncSessionLocal()
         yield session
     finally:
-        await session.close()
-        # Drop all the tables after test completed
-        async with test_engine.begin() as conn:
-            await conn.run_sync(Base.metadata.drop_all)
+        session.close()
 
 
 @pytest.fixture(name="client", scope="function")

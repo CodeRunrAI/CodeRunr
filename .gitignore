@@ -16,5 +16,8 @@ wheels/
 #logs
 logs/
 
+#temp
+tmp/
+
 # IDE
 .vscode

@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError, StatementError
 
 from db.repository.languages import create_language, get_language, get_languages
+from db.repository.sync_queries import get_language_sync, get_submission_by_token_sync
 from db.repository.submissions import (
     create_submission,
     get_submission_by_token,
@@ -86,7 +87,7 @@ class TestLanguageRepository:
 
     @pytest.mark.asyncio
     async def test_get_language(
-        self, mock_language_sample: Dict[str, Any], db: AsyncSession
+        self, mock_language_sample: Dict[str, Any], db: AsyncSession, sync_db
     ):
         language_data = LanguageCreate.model_validate(mock_language_sample)
         language_created = await create_language(db, language_data)
@@ -99,9 +100,22 @@ class TestLanguageRepository:
         assert language_created.compile_cmd == language_get.compile_cmd
         assert language_created.is_archived == language_get.is_archived
 
+        # Also test the sync query
+        language_get = get_language_sync(sync_db, language_created.id)
+
+        assert language_created.id == language_get.id
+        assert language_created.name == language_get.name
+        assert language_created.version == language_get.version
+        assert language_created.run_cmd == language_get.run_cmd
+        assert language_created.compile_cmd == language_get.compile_cmd
+        assert language_created.is_archived == language_get.is_archived
+
     @pytest.mark.asyncio
-    async def test_get_language_not_found(self, db: AsyncSession):
+    async def test_get_language_not_found(self, db: AsyncSession, sync_db):
         language_get = await get_language(db, 1)
+        assert language_get is None
+
+        language_get = get_language_sync(sync_db, 1)
         assert language_get is None
 
     @pytest.mark.asyncio
@@ -174,7 +188,7 @@ class TestSubmissionRepository:
 
     @pytest.mark.asyncio
     async def test_get_submission_by_token(
-        self, mock_submission_sample: Dict[str, Any], db: AsyncSession
+        self, mock_submission_sample: Dict[str, Any], db: AsyncSession, sync_db
     ):
         submission_data = SubmissionCreate.model_validate(mock_submission_sample)
         submission_created = await create_submission(db, submission_data)
@@ -187,9 +201,22 @@ class TestSubmissionRepository:
         assert submission_get.source_code == submission_created.source_code
         assert submission_get.language_id == submission_created.language_id
 
+        # Test with sync query
+        submission_get = get_submission_by_token_sync(sync_db, submission_created.token)
+
+        assert submission_get is not None
+        assert submission_get.id == submission_created.id
+        assert submission_get.token == submission_created.token
+        assert submission_get.status == submission_created.status
+        assert submission_get.source_code == submission_created.source_code
+        assert submission_get.language_id == submission_created.language_id
+
     @pytest.mark.asyncio
-    async def test_get_submission_by_token_not_found(self, db: AsyncSession):
+    async def test_get_submission_by_token_not_found(self, db: AsyncSession, sync_db):
         submission_get = await get_submission_by_token(db, uuid.uuid4())
+        assert submission_get is None
+
+        submission_get = get_submission_by_token_sync(sync_db, uuid.uuid4())
         assert submission_get is None
 
     @pytest.mark.asyncio
