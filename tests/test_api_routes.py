@@ -354,7 +354,10 @@ class TestSubmissionRoute:
         total_samples = len(mock_submission_samples)
         remaining_items = 50 - total_samples
         items = [
-            {**mock_submission_samples[index % total_samples], "token": str(uuid.uuid4())}
+            {
+                **mock_submission_samples[index % total_samples],
+                "token": str(uuid.uuid4()),
+            }
             for index in range(remaining_items)
         ]
 
@@ -432,6 +435,37 @@ class TestSubmissionRoute:
             assert post_data["submissions"][i]["status"] == submission["status"]
 
     @pytest.mark.asyncio
+    async def test_create_submission_batch_with_invalid_data(
+        self, mock_submission_samples: List[Dict[str, Any]], async_client: AsyncClient
+    ):
+        if len(mock_submission_samples):
+            mock_submission_samples[-1]["source_code"] = 4  # add source code str
+
+        post_data = {"submissions": mock_submission_samples}
+
+        with patch(
+            "routes.submissions.create_submission_batch"
+        ) as mock_create_submission_batch:
+            mock_create_submission_batch.return_value = []  # We are not expecting any data to be returned
+
+            with patch(
+                "routes.submissions.submit_submission_task"
+            ) as mock_submit_submission_task:
+                mock_submit_submission_task.delay = MagicMock()
+
+                response = await async_client.post(
+                    "/api/v1/submissions/batch", json=post_data
+                )
+                json_response = response.json()
+
+                assert response.status_code == 422
+                assert json_response["status"] == "Error"
+                assert json_response["message"] == "Validation Error"
+
+                mock_create_submission_batch.assert_not_awaited()
+                mock_submit_submission_task.delay.assert_not_called()
+
+    @pytest.mark.asyncio
     async def test_get_submission_batch(
         self, mock_submission_samples: List[Dict[str, Any]], async_client: AsyncClient
     ):
@@ -451,7 +485,9 @@ class TestSubmissionRoute:
         ) as mock_get_submission_batch:
             mock_get_submission_batch.return_value = submission_batch
 
-            response = await async_client.get(f"/api/v1/submissions/batch/{batch_token}")
+            response = await async_client.get(
+                f"/api/v1/submissions/batch/{batch_token}"
+            )
             json_response = response.json()
 
             assert response.status_code == 200
@@ -464,7 +500,9 @@ class TestSubmissionRoute:
                 "status": "Queued",
             }
             mock_get_submission_batch.assert_awaited_once()
-            assert mock_get_submission_batch.await_args.args[1] == uuid.UUID(batch_token)
+            assert mock_get_submission_batch.await_args.args[1] == uuid.UUID(
+                batch_token
+            )
 
     @pytest.mark.asyncio
     async def test_get_submission_batch_not_found(self, async_client: AsyncClient):
@@ -475,7 +513,9 @@ class TestSubmissionRoute:
         ) as mock_get_submission_batch:
             mock_get_submission_batch.return_value = None
 
-            response = await async_client.get(f"/api/v1/submissions/batch/{batch_token}")
+            response = await async_client.get(
+                f"/api/v1/submissions/batch/{batch_token}"
+            )
             json_response = response.json()
 
             assert response.status_code == 404
@@ -527,3 +567,58 @@ class TestAuthRoute:
             assert json_response["message"] == "All languages"
             assert json_response["data"] == []
             mock_get_languages.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    @pytest.mark.real_auth
+    async def test_submission_require_api_key(self, async_client: AsyncClient):
+        token = str(uuid.uuid4())
+        response = await async_client.get(f"/api/v1/submissions/{token}")
+        json_response = response.json()
+
+        assert response.status_code == 401
+        assert json_response["status"] == "Error"
+        assert json_response["message"] == "Unauthorized: No API key provided"
+
+    @pytest.mark.asyncio
+    @pytest.mark.real_auth
+    async def test_submission_rejects_invalid_api_key(self, async_client: AsyncClient):
+        token = str(uuid.uuid4())
+        response = await async_client.get(
+            f"/api/v1/submissions/{token}", headers={"X-API-KEY": "not-the-right-key"}
+        )
+        json_response = response.json()
+
+        assert response.status_code == 401
+        assert json_response["status"] == "Error"
+        assert json_response["message"] == "Unauthorized: invalid API key"
+
+    @pytest.mark.asyncio
+    @pytest.mark.real_auth
+    async def test_submission_accepts_valid_api_key(
+        self, mock_submission_sample: Dict[str, Any], async_client: AsyncClient
+    ):
+        token = mock_submission_sample["token"]
+
+        with patch(
+            "routes.submissions.get_submission_by_token"
+        ) as mock_get_submission_by_token:
+            mock_get_submission_by_token.return_value = Submission(
+                **mock_submission_sample
+            )
+
+            response = await async_client.get(
+                f"/api/v1/submissions/{token}",
+                headers={"X-API-KEY": settings.AUTH_TOKEN.get_secret_value()},
+            )
+            json_response = response.json()
+
+            assert response.status_code == 200
+            assert json_response["status"] == "Success"
+            assert json_response["message"] == "Submission data"
+            assert json_response["data"] == {
+                "token": token,
+                "status": mock_submission_sample["status"],
+            }
+
+            mock_get_submission_by_token.assert_awaited_once()
+            assert mock_get_submission_by_token.await_args.args[1] == uuid.UUID(token)
