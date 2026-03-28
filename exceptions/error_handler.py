@@ -1,12 +1,16 @@
 import time
 import asyncio
-from typing import Callable, Awaitable
+from typing import Callable, TypeVar, ParamSpec
 from functools import wraps
 
 from loguru import logger
 
 
-def sync_error_handler(*, name: str, max_retries: int = 5):
+T = TypeVar("T")
+P = ParamSpec("P")
+
+
+def sync_error_handler(*, name: str, max_retries: int = 5) -> Callable[P, T]:
     """
     Sync Error Handler decorator wraps any operation, and retry the operation
     at max_retries times with exponential backoff time in case of any exception occurs.
@@ -19,7 +23,7 @@ def sync_error_handler(*, name: str, max_retries: int = 5):
         Exception : In case of any exception
     """
 
-    def decorator(func: Callable):
+    def decorator(func: Callable[P, T]):
         @wraps(func)
         def wrapper(*args, **kwargs):
             for i in range(1, max_retries + 1):
@@ -46,7 +50,7 @@ def sync_error_handler(*, name: str, max_retries: int = 5):
     return decorator
 
 
-def async_error_handler(*, name: str, max_retries: int = 5):
+def async_error_handler(*, name: str, max_retries: int = 5) -> Callable[P, T]:
     """
     Async Error Handler decorator wraps any operation, and retry the operation
     at max_retries times with exponential backoff time in case of any exception occurs.
@@ -59,7 +63,7 @@ def async_error_handler(*, name: str, max_retries: int = 5):
         Exception : In case of any exception
     """
 
-    def decorator(func: Callable[..., Awaitable]):
+    def decorator(func: Callable[P, T]):
         @wraps(func)
         async def wrapper(*args, **kwargs):
             for i in range(1, max_retries + 1):
