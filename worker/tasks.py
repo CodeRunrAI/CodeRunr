@@ -40,7 +40,7 @@ def submit_submission_task(submission_token: str) -> str:
 
             if submission_record is None:
                 logger.error("Submission {} not found", token)
-                return
+                return f"Submission failed {token}"
 
             language = get_language_sync(db, submission_record.language_id)
             if language is None:
@@ -49,7 +49,7 @@ def submit_submission_task(submission_token: str) -> str:
                     f"Unsupported language_id: {submission_record.language_id}"
                 )
                 db.commit()
-                return
+                return f"Submission failed {token}"
 
             # Mark as processing
             submission_record.status = SandboxSubmissionStatus.process.value
