@@ -43,28 +43,22 @@ def submit_submission_task(submission_token: str) -> str:
                 return f"Submission failed {token}"
 
             language = get_language_sync(db, submission_record.language_id)
-            if language is None:
-                submission_record.status = SandboxSubmissionStatus.boxerr.value
-                submission_record.message = (
-                    f"Unsupported language_id: {submission_record.language_id}"
-                )
-                db.commit()
-                return f"Submission failed {token}"
 
             # Mark as processing
             submission_record.status = SandboxSubmissionStatus.process.value
             db.commit()
 
             # Build internal schema
+            submission_language = SandboxSubmissionLanguage.model_validate(language)
             submission = SandboxSubmission(
                 id=submission_record.id,
-                language=SandboxSubmissionLanguage.model_validate(language),
+                language=submission_language,
                 source_code=submission_record.source_code,
                 stdin=submission_record.stdin or "",
                 expected_output=submission_record.expected_output,
-                cpu_time_limit=int(submission_record.cpu_time_limit),
-                cpu_extra_time=int(submission_record.cpu_extra_time),
-                wall_time_limit=int(submission_record.wall_time_limit),
+                cpu_time_limit=submission_record.cpu_time_limit,
+                cpu_extra_time=submission_record.cpu_extra_time,
+                wall_time_limit=submission_record.wall_time_limit,
                 memory_limit=submission_record.memory_limit,
                 stack_limit=submission_record.stack_limit,
                 max_file_size=submission_record.max_file_size,
@@ -112,7 +106,7 @@ def submit_submission_task(submission_token: str) -> str:
             return f"Submission successful {token}"
 
     except Exception as e:
-        logger.exception(e.__repr__())
+        logger.error(e.__repr__())
         # Mark as internal error using a fresh session
         try:
             with SyncSessionLocal() as db:
@@ -122,6 +116,6 @@ def submit_submission_task(submission_token: str) -> str:
                     err_submission_record.message = "Internal worker error"
                     db.commit()
         except Exception:
-            logger.exception("Failed to mark submission {} as errored", token)
+            logger.error("Failed to mark submission {} as errored", token)
 
         return f"Submission failed {token}"

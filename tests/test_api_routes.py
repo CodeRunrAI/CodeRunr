@@ -169,7 +169,7 @@ class TestSubmissionRoute:
                 )
 
     @pytest.mark.asyncio
-    async def test_create_submission_with_invalid_data(
+    async def test_create_submission_with_invalid_token(
         self, mock_submission_sample: Dict[str, Any], async_client: AsyncClient
     ):
         mock_submission_sample["token"] = "xxx"

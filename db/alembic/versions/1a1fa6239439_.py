@@ -100,6 +100,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(
             ["batch_id"], ["submission_batches.id"], ondelete="CASCADE"
         ),
+        sa.ForeignKeyConstraint(["language_id"], ["languages.id"], ondelete="RESTRICT"),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(op.f("ix_submissions_token"), "submissions", ["token"], unique=True)

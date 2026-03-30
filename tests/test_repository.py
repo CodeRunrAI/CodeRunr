@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Any
 
 import pytest
+import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError, StatementError
 
@@ -148,9 +149,23 @@ class TestLanguageRepository:
 
 
 class TestSubmissionRepository:
+    @pytest_asyncio.fixture(autouse=True)
+    async def sample_language(
+        self, mock_language_samples: List[Dict[str, Any]], db: AsyncSession
+    ):
+        languages = [
+            Language(**mock_language_sample)
+            for mock_language_sample in mock_language_samples
+        ]
+        db.add_all(languages)
+        await db.commit()
+        return languages
+
     @pytest.mark.asyncio
     async def test_create_submission(
-        self, mock_submission_sample: Dict[str, Any], db: AsyncSession
+        self,
+        mock_submission_sample: Dict[str, Any],
+        db: AsyncSession,
     ):
         submission_data = SubmissionCreate.model_validate(mock_submission_sample)
         submission_created = await create_submission(db, submission_data)
@@ -185,6 +200,18 @@ class TestSubmissionRepository:
 
         with pytest.raises(IntegrityError):
             await create_submission(db, duplicate_submission)
+
+    @pytest.mark.asyncio
+    async def test_create_submission_with_invalid_language_id(
+        self,
+        mock_submission_sample: Dict[str, Any],
+        db: AsyncSession,
+    ):
+        mock_submission_sample["language_id"] = 10  # Invalid
+        submission = SubmissionCreate.model_validate(mock_submission_sample)
+
+        with pytest.raises(IntegrityError):
+            await create_submission(db, submission)
 
     @pytest.mark.asyncio
     async def test_get_submission_by_token(

@@ -6,7 +6,7 @@ import pytest
 import pytest_asyncio
 from httpx import AsyncClient
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -86,6 +86,16 @@ def sync_db_fixture():
         session.close()
 
 
+def _enable_sqlite_foreign_keys(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
+
+
+event.listen(test_sync_engine, "connect", _enable_sqlite_foreign_keys)
+event.listen(test_engine.sync_engine, "connect", _enable_sqlite_foreign_keys)
+
+
 @pytest.fixture(name="client", scope="function")
 def client_fixture():
     """Test client for fastapi app"""
@@ -153,7 +163,25 @@ def mock_language_samples():
             "compile_cmd": "gcc -o main main.c -lm",
             "run_cmd": "./main",
             "is_archived": False,
-        }
+        },
+        {
+            "id": 2,
+            "name": "C++",
+            "version": "GCC 13.3.0",
+            "source_file": "main.cpp",
+            "compile_cmd": "g++ -o main main.cpp -std=c++17",
+            "run_cmd": "./main",
+            "is_archived": False,
+        },
+        {
+            "id": 3,
+            "name": "Python",
+            "version": "3.12.3",
+            "source_file": "main.py",
+            "compile_cmd": "python3 -m py_compile main.py",
+            "run_cmd": "python3 main.py",
+            "is_archived": False,
+        },
     ]
 
 

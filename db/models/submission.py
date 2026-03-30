@@ -39,7 +39,9 @@ class Submission(Base):
 
     # Code
     source_code: Mapped[str] = mapped_column(Text)
-    language_id: Mapped[int] = mapped_column()
+    language_id: Mapped[int] = mapped_column(
+        ForeignKey("languages.id", ondelete="RESTRICT")
+    )
 
     # I/O
     stdin: Mapped[Optional[str]] = mapped_column(Text)
@@ -107,5 +109,8 @@ class SubmissionBatch(Base):
 
     # Submissions
     submissions: Mapped[List["Submission"]] = relationship(
-        back_populates="batch", cascade="all,delete-orphan", lazy="selectin"
+        back_populates="batch",
+        cascade="all,delete-orphan",
+        lazy="selectin",
+        passive_deletes=True,  # For cascade delete
     )

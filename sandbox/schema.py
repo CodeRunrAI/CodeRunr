@@ -50,17 +50,15 @@ class SandboxSubmission(BaseModel):
     exit_signal: Optional[int] = None
     message: Optional[str] = None
     status: SandboxSubmissionStatus = SandboxSubmissionStatus.queued
-    cpu_time_limit: int
-    cpu_extra_time: int
-    wall_time_limit: int
+    cpu_time_limit: float
+    cpu_extra_time: float
+    wall_time_limit: float
     stack_limit: int
     memory_limit: int
     max_file_size: int
     max_processes_and_or_threads: int
     limit_per_process_and_thread_cpu_time_usages: bool
     limit_per_process_and_thread_memory_usages: bool
-    created_at: Optional[datetime] = None
     finished_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}

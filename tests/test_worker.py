@@ -59,19 +59,6 @@ class TestWorkerTasks:
         result = worker_tasks.submit_submission_task(token)
         assert result == f"Submission failed {token}"
 
-    def test_submit_submission_task_marks_unsupported_language(
-        self, mock_submission_sample: Dict[str, Any], sync_db: Session
-    ):
-        submission = _create_submission(
-            mock_submission_sample, sync_db, language_id=999
-        )
-        result = worker_tasks.submit_submission_task(str(submission.token))
-
-        sync_db.refresh(submission)
-        assert result == f"Submission failed {submission.token}"
-        assert submission.status == SandboxSubmissionStatus.boxerr.value
-        assert submission.message == "Unsupported language_id: 999"
-
     def test_submit_submission_task_persists_sandbox_results(
         self,
         mock_language_sample: Dict[str, Any],

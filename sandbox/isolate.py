@@ -32,15 +32,16 @@ class IsolateCodeSandbox:
 
     def process_and_execute(self):
         """Process and then clean the created sandbox environment"""
-        self.initialize_workdirs()
+        try:
+            self.initialize_workdirs()
 
-        if self.compile_code():
-            self.run_code()  # Run the code
-            self.verify_result()
-        else:
-            self.submission.status = SandboxSubmissionStatus.comerr
-
-        self.do_cleanup()
+            if self.compile_code():
+                self.run_code()  # Run the code
+                self.verify_result()
+            else:
+                self.submission.status = SandboxSubmissionStatus.comerr
+        finally:
+            self.do_cleanup()
 
     def run_command(self, cmd, shell=False):
         """
