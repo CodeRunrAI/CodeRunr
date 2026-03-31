@@ -106,7 +106,7 @@ def submit_submission_task(submission_token: str) -> str:
             return f"Submission successful {token}"
 
     except Exception as e:
-        logger.error(e.__repr__())
+        logger.exception(e)
         # Mark as internal error using a fresh session
         try:
             with SyncSessionLocal() as db:

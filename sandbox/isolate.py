@@ -2,6 +2,8 @@ import re
 import subprocess
 from pathlib import Path
 
+from loguru import logger
+
 from config import settings
 from .schema import SandboxSubmissionStatus, SandboxSubmission
 
@@ -41,7 +43,10 @@ class IsolateCodeSandbox:
             else:
                 self.submission.status = SandboxSubmissionStatus.comerr
         finally:
-            self.do_cleanup()
+            try:
+                self.do_cleanup()
+            except Exception as e:
+                logger.error(f"Sandbox Cleanup failed {e}")
 
     def run_command(self, cmd, shell=False):
         """
@@ -60,7 +65,7 @@ class IsolateCodeSandbox:
         result = self.run_command(cmd, shell=True)
 
         if result.stderr:
-            raise Exception(result.stderr)
+            raise RuntimeError(result.stderr)
 
         self.workdir = Path(result.stdout.strip())
 
@@ -125,7 +130,7 @@ class IsolateCodeSandbox:
         # Start isolating execution of `compile.sh`
         process = self.run_command(command, shell=True)
         if process.stderr:
-            raise Exception(process.stderr)
+            raise RuntimeError(process.stderr)
 
         # Read compilation output
         with open(compile_output_file, "r") as f:
@@ -158,7 +163,10 @@ class IsolateCodeSandbox:
             < {self.stdin_file} > {self.stdout_file} 2> {self.stderr_file}
         """
 
-        self.run_command(command, shell=True)
+        process = self.run_command(command, shell=True)
+
+        if process.stderr:
+            raise RuntimeError(process.stderr)
 
     def verify_result(self):
         metadata = self.get_metadata()
