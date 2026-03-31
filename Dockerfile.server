@@ -16,4 +16,7 @@ RUN chmod +x /server.sh
 
 EXPOSE 8080
 
+RUN adduser --disabled-password --gecos "" appuser
+USER appuser
+
 ENTRYPOINT ["/server.sh"]
