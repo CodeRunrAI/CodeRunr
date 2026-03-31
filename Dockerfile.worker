@@ -40,10 +40,7 @@ RUN chmod 4755 /usr/local/bin/isolate
 
 # Isolate configuration
 COPY config/isolate.conf /tmp/isolate.raw
-RUN mkdir -p /usr/local/etc /var/local/lib/isolate /run/isolate/locks \
-    && tr -d '\r' < /tmp/isolate.raw > /usr/local/etc/isolate \
-    && chown root:root /var/local/lib/isolate /run/isolate /run/isolate/locks \
-    && chmod 0700 /var/local/lib/isolate /run/isolate /run/isolate/locks \
+RUN tr -d '\r' < /tmp/isolate.raw > /usr/local/etc/isolate \
     && rm /tmp/isolate.raw
 
 
@@ -54,8 +51,11 @@ WORKDIR /app
 # Install UV from docker image
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
+COPY pyproject.toml .
+COPY uv.lock .
+RUN uv sync --frozen
+
 COPY . .
-RUN uv sync --frozen --no-dev
 
 COPY scripts/worker.docker.sh /worker.docker.sh
 RUN chmod +x /worker.docker.sh
