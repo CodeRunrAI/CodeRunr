@@ -17,15 +17,7 @@ class CORSConfig(BaseSettings):
     ALLOWED_METHODS: List[str] = Field(
         default_factory=lambda: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
     )
-    ALLOWED_HEADERS: List[str] = Field(
-        default_factory=lambda: [
-            "Accept",
-            "Authorization",
-            "Content-Type",
-            "Origin",
-            "X-API-Key",
-        ]
-    )
+    ALLOWED_HEADERS: List[str] = Field(default_factory=lambda: ["*"])
     MAX_AGE: int = 600
 
     model_config = SettingsConfigDict(
