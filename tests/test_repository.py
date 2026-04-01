@@ -16,6 +16,7 @@ from db.repository.submissions import (
     delete_submission,
     create_submission_batch,
     get_submission_batch_by_token,
+    update_submission,
 )
 from db.models import Language
 from schema import LanguageCreate, SubmissionCreate
@@ -212,6 +213,45 @@ class TestSubmissionRepository:
 
         with pytest.raises(IntegrityError):
             await create_submission(db, submission)
+
+    @pytest.mark.asyncio
+    async def test_update_submission(
+        self,
+        mock_submission_sample: Dict[str, Any],
+        db: AsyncSession,
+    ):
+        submission = SubmissionCreate.model_validate(mock_submission_sample)
+        new_submission = await create_submission(db, submission)
+
+        assert new_submission.language_id != 1
+        assert new_submission.source_code != "cout << 'Hello World'"
+
+        data_to_update = {
+            "language_id": 1,  # c++
+            "source_code": "cout << 'Hello World'",
+        }
+        updated_submission = await update_submission(
+            db, new_submission.token, data_to_update
+        )
+
+        assert updated_submission.language_id == 1
+        assert updated_submission.source_code == "cout << 'Hello World'"
+
+    @pytest.mark.asyncio
+    async def test_update_submission_with_no_existing_submission(
+        self,
+        mock_submission_sample: Dict[str, Any],
+        db: AsyncSession,
+    ):
+        data_to_update = {
+            "language_id": 1,  # c++
+            "source_code": "cout << 'Hello World'",
+        }
+        updated_submission = await update_submission(
+            db, uuid.UUID(mock_submission_sample["token"]), data_to_update
+        )
+
+        assert updated_submission is None
 
     @pytest.mark.asyncio
     async def test_get_submission_by_token(

@@ -1,4 +1,5 @@
 from uuid import UUID
+from typing import List, Dict, Any
 
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -64,7 +65,7 @@ async def get_submission_by_token(db: AsyncSession, token: UUID) -> Submission |
 
 async def get_submissions(
     db: AsyncSession, page: int = 1, per_page: int = 20
-) -> list[Submission]:
+) -> List[Submission]:
     """
     Get all submissions.
 
@@ -84,6 +85,40 @@ async def get_submissions(
         .limit(per_page)
     )
     return list(result.scalars().all())
+
+
+async def update_submission(
+    db: AsyncSession, token: UUID, data: Dict[str, Any]
+) -> Submission | None:
+    """
+    Update the submission by its toke
+
+    Args:
+        db (AsyncSession): The database session.
+        token (UUID): The token of the submission to delete.
+
+    Returns:
+        Submission | None: The submission if found, None otherwise.
+    """
+    try:
+        result = await db.execute(
+            select(Submission).where(Submission.token == token).with_for_update()
+        )
+        submission = result.scalar_one_or_none()
+
+        if not submission:
+            return None
+
+        for key, value in data.items():
+            if hasattr(submission, key):
+                setattr(submission, key, value)
+
+        await db.commit()
+        await db.refresh(submission)
+        return submission
+    except SQLAlchemyError:
+        await db.rollback()
+        raise
 
 
 async def delete_submission(db: AsyncSession, token: UUID) -> bool:
