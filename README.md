@@ -11,15 +11,30 @@ environment using linux feature such as CgroupV2, namespace. The current version
 
 Currently we are only supporting these languages, we will add more in future.
 
-C, C++, Python, JavaScript, TypeScript, Java, Go, Rust
+- C,
+- C++,
+- Python
+- JavaScript
+- TypeScript
+- Java
+- Go
+- Rust
 
 ## Getting Started
 
-### Prerequisites
+- Clone the repo:
 
-- Docker & Docker Compose
+```bash
+git clone https://github.com/AandALabs/CodeRunr
+```
 
-### Run
+- Add AUTH_TOKEN in .env
+
+```.env
+AUTH_TOKEN="coderunr_4a9f*******d3ef****7"
+```
+
+- Run the docker compose to start and run the project
 
 ```bash
 docker compose up -d --build
@@ -39,13 +54,3 @@ Set `AUTH_TOKEN` in your `.env` file and send it on each protected request using
 ```bash
 X-API-Key: <your-auth-token>
 ```
-
-## API Endpoints
-
-| Method | Endpoint                   | Description              |
-| ------ | -------------------------- | ------------------------ |
-| `GET`  | `/api/v1/health`           | Health check             |
-| `POST` | `/api/v1/submissions`      | Create a submission      |
-| `GET`  | `/api/v1/submissions/{id}` | Get submission result    |
-| `GET`  | `/api/v1/languages`        | List supported languages |
-| `POST` | `/api/v1/languages`        | Add a language           |
