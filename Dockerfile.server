@@ -1,0 +1,22 @@
+FROM python:3.12-alpine
+
+WORKDIR /app
+
+# Install UV from docker image
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+COPY pyproject.toml .
+COPY uv.lock .
+RUN uv sync --frozen
+
+COPY . .
+
+COPY scripts/server.sh /server.sh
+RUN chmod +x /server.sh
+
+EXPOSE 8080
+
+RUN adduser --disabled-password --gecos "" appuser
+USER appuser
+
+ENTRYPOINT ["/server.sh"]

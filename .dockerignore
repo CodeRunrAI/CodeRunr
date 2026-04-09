@@ -1,0 +1,11 @@
+# Docker / build artifacts
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.git/
+.gitignore
+*.md
+!README.md
+outputs/
+.env

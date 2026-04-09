@@ -1,0 +1,63 @@
+FROM ubuntu:24.04 AS base
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    git \
+    pkg-config \
+    libcap-dev \
+    gcc \
+    g++ \
+    python3 \
+    python3-pip \
+    nodejs \
+    npm \
+    default-jdk \
+    golang-go \
+    rustc \
+    cargo \
+    curl \
+    ca-certificates \
+    libseccomp-dev \
+    libsystemd-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Typescript using npm
+RUN npm install -g typescript @types/node ts-node
+ENV NODE_PATH=/usr/local/lib/node_modules
+
+# Build & install isolate
+RUN git clone https://github.com/ioi/isolate.git --branch v2.2 /tmp/isolate \
+    && cd /tmp/isolate \
+    && make -j$(nproc) isolate isolate-cg-keeper \
+    && cp isolate /usr/local/bin/ \
+    && cp isolate-cg-keeper /usr/local/bin/ \
+    && rm -rf /tmp/isolate
+
+# Ensure isolate binary is setuid root
+RUN chmod 4755 /usr/local/bin/isolate
+
+# Isolate configuration
+COPY config/isolate.conf /tmp/isolate.raw
+RUN tr -d '\r' < /tmp/isolate.raw > /usr/local/etc/isolate \
+    && rm /tmp/isolate.raw
+
+
+FROM base AS app
+
+WORKDIR /app
+
+# Install UV from docker image
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+COPY pyproject.toml .
+COPY uv.lock .
+RUN uv sync --frozen
+
+COPY . .
+
+COPY scripts/worker.docker.sh /worker.docker.sh
+RUN chmod +x /worker.docker.sh
+
+ENTRYPOINT ["/worker.docker.sh"]
