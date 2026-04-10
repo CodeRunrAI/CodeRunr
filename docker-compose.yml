@@ -61,7 +61,7 @@ services:
       POSTGRES_USER: sandbox
       POSTGRES_PASSWORD: sandbox
       POSTGRES_DB: coderunr
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      REDIS_URL: redis://redis:6379/0
       AUTH_TOKEN: ${AUTH_TOKEN}
     privileged: true
     cgroup: host

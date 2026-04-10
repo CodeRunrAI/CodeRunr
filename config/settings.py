@@ -1,10 +1,12 @@
 from pathlib import Path
-from typing import Literal, TypeAlias, Any, List
+from typing import TYPE_CHECKING, List, Literal, TypeAlias
 
 from pydantic import SecretStr, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from config.celery import CeleryConfig
-from config.sandbox import SandboxConfig
+
+if TYPE_CHECKING:
+    from config.celery import CeleryConfig
+    from config.sandbox import SandboxConfig
 
 
 LOG_LEVEL_TYPES: TypeAlias = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
@@ -12,6 +14,8 @@ LOG_FORMAT_STR = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level}
 
 
 class CORSConfig(BaseSettings):
+    """Cors config"""
+
     ALLOW_ORIGINS: List[str] = Field(default_factory=lambda: ["*"])
     ALLOW_CREDENTIALS: bool = False
     ALLOWED_METHODS: List[str] = Field(
@@ -36,7 +40,7 @@ class Settings(BaseSettings):
     CORS_CONFIG: CORSConfig = CORSConfig()
 
     # Logging and monitoring
-    LOG_LEVEL: LOG_LEVEL_TYPES = "WARNING"
+    LOG_LEVEL: LOG_LEVEL_TYPES = "INFO"
     LOG_DIR: Path = BASE_DIR / "logs"
     LOG_FILE_NAME: str = "file.log"
     LOG_TO_FILE: bool = False
@@ -65,22 +69,21 @@ class Settings(BaseSettings):
     HTTP_FOLLOW_REDIRECTS: bool = True
     HTTP_USER_AGENT: str = "CodeRunr/0.1.0"
 
-    # Sandbox config
-    SANDBOX_CONFIG: SandboxConfig = SandboxConfig()
+    @property
+    def SANDBOX_CONFIG(self) -> "SandboxConfig":
+        from config.sandbox import sandbox_config
+
+        return sandbox_config
+
+    @property
+    def CELERY_CONFIG(self) -> "CeleryConfig":
+        from config.celery import celery_config
+
+        return celery_config
+
     model_config = SettingsConfigDict(
         env_file=".env", case_sensitive=True, extra="ignore"
     )
-
-    # Celery config
-    CELERY_CONFIG: CeleryConfig | None = None
-
-    def model_post_init(self, __context: Any) -> None:
-        if self.CELERY_CONFIG is None:
-            redis_url = self.REDIS_URL.get_secret_value()
-            self.CELERY_CONFIG = CeleryConfig(
-                BROKER_URL=redis_url,
-                BACKEND_URL=redis_url,
-            )
 
 
 settings = Settings()
