@@ -1,11 +1,16 @@
 from typing import Any
-from pydantic import BaseModel, Field
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from config.settings import settings
 
 
-class CeleryConfig(BaseModel):
-    BROKER_URL: str = Field(description="Broker connection URL used by Celery workers.")
+class CeleryConfig(BaseSettings):
+    BROKER_URL: str = Field(
+        description="Broker connection URL used by Celery workers.",
+    )
     BACKEND_URL: str = Field(
-        description="Result backend connection URL used to store task states and results."
+        description="Result backend connection URL used to store task states and results.",
     )
     BROKER_CONNECTION_RETRY_ON_STARTUP: bool = Field(
         default=True,
@@ -87,3 +92,13 @@ class CeleryConfig(BaseModel):
             "timezone": self.TIMEZONE,
             "enable_utc": self.ENABLE_UTC,
         }
+
+    model_config = SettingsConfigDict(
+        env_file=".env", case_sensitive=True, extra="ignore", env_prefix="CELERY_"
+    )
+
+
+celery_config = CeleryConfig(
+    BROKER_URL=settings.REDIS_URL.get_secret_value(),
+    BACKEND_URL=settings.REDIS_URL.get_secret_value(),
+)

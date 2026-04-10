@@ -3,7 +3,7 @@ import sys
 
 from loguru import logger
 
-from .settings import settings
+from config import settings
 
 
 class InterceptHandler(logging.Handler):

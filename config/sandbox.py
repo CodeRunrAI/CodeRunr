@@ -35,3 +35,6 @@ class SandboxConfig(BaseModel):
     # more than allowed limit
     # Default is set to 64
     MAX_MAX_PROCESSES_AND_OR_THREADS: int = 64
+
+
+sandbox_config = SandboxConfig()
