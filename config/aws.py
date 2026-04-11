@@ -1,13 +1,20 @@
-from pydantic import SecretStr, Field
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class AWSConfig(BaseSettings):
-    """AWS Config"""
+    """AWS Config (All the env variables should start with AWS_)"""
 
-    ACCESS_KEY_ID: SecretStr = Field(description="AWS access key id")
-    SECRET_ACCESS_KEY: SecretStr = Field(description="AWS secret access key")
-    REGION: str = Field(description="AWS Region")
+    ACCESS_KEY_ID: SecretStr
+    """Access key id"""
+    SECRET_ACCESS_KEY: SecretStr
+    """Secret access key"""
+    REGION: str
+    """Region, e.g. ap-south-1"""
+    SQS_QUEUE_NAME: str
+    """SQS Queue Name"""
+    SQS_QUEUE_URL: str
+    """SQS Queue URL"""
 
     model_config = SettingsConfigDict(
         env_file=".env", cache_strings=True, extra="ignore", env_prefix="AWS_"

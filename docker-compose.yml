@@ -38,7 +38,11 @@ services:
       POSTGRES_USER: sandbox
       POSTGRES_PASSWORD: sandbox
       POSTGRES_DB: coderunr
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_SQS_QUEUE_NAME: ${AWS_SQS_QUEUE_NAME}
+      AWS_SQS_QUEUE_URL: ${AWS_SQS_QUEUE_URL}
+      AWS_REGION: ${AWS_REGION}
       AUTH_TOKEN: ${AUTH_TOKEN}
     ports:
       - 8080:8000
@@ -61,7 +65,11 @@ services:
       POSTGRES_USER: sandbox
       POSTGRES_PASSWORD: sandbox
       POSTGRES_DB: coderunr
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_SQS_QUEUE_NAME: ${AWS_SQS_QUEUE_NAME}
+      AWS_SQS_QUEUE_URL: ${AWS_SQS_QUEUE_URL}
+      AWS_REGION: ${AWS_REGION}
       AUTH_TOKEN: ${AUTH_TOKEN}
     privileged: true
     cgroup: host

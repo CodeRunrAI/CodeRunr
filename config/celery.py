@@ -1,9 +1,35 @@
-from typing import Any
+from typing import Any, Dict
+
+from kombu import Queue
 from kombu.utils.url import safequote
+from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from config.aws import aws_config
 from db.session import _build_url
+
+
+class TransportOptions(BaseModel):
+    MAX_RETRIES: int = 10
+    """Maximum broker transport retry attempts for transient connection errors."""
+    RETRY_TIMEOUT_SECONDS: float = 5.0
+    """Socket timeout, in seconds, used by the broker client's retry policy."""
+    VISIBILITY_TIMEOUT_SECONDS: int = 30
+    """Seconds a fetched message stays hidden before another worker can receive it."""
+    POLLING_INTERVAL_SECONDS: float = 0.5
+    """Delay, in seconds, between queue polling attempts when no messages are available."""
+    WALL_TIME_SECONDS_SECONDS: float = 15.0
+    """SQS long polling wait time, in seconds, used to reduce empty and false-empty ReceiveMessage responses."""
+    PREDEFINED_QUEUES: Dict = {
+        aws_config.SQS_QUEUE_NAME: {
+            "url": aws_config.SQS_QUEUE_URL,
+            "access_key_id": aws_config.ACCESS_KEY_ID.get_secret_value(),
+            "secret_access_key": aws_config.SECRET_ACCESS_KEY.get_secret_value(),
+        }
+    }
+    """Predefined queues"""
+    AWS_REGION: str = aws_config.REGION
+    """AWS Region"""
 
 
 class CeleryConfig(BaseSettings):
@@ -15,20 +41,10 @@ class CeleryConfig(BaseSettings):
     """Retry broker connection during worker startup until the broker becomes available."""
     BROKER_CONNECTION_MAX_RETRIES: int = 50
     """Maximum number of initial broker connection retries before startup fails."""
-    BROKER_TRANSPORT_VISIBILITY_TIMEOUT_SECONDS: int = 30
-    """Seconds a fetched message stays hidden before another worker can receive it."""
-    BROKER_TRANSPORT_MAX_RETRIES: int = 10
-    """Maximum broker transport retry attempts for transient connection errors."""
-    BROKER_TRANSPORT_RETRY_TIMEOUT_SECONDS: float = 5.0
-    """Socket timeout, in seconds, used by the broker client's retry policy."""
-    BROKER_TRANSPORT_POLLING_INTERVAL_SECONDS: float = 0.5
-    """Delay, in seconds, between queue polling attempts when no messages are available."""
-    BROKER_TRANSPORT_WALL_TIME_SECONDS_SECONDS: float = 15.0
-    """SQS long polling wait time, in seconds, used to reduce empty and false-empty ReceiveMessage responses."""
-    BROKER_TRANSPORT_AWS_REGION: str = aws_config.REGION
-    """AWS Region for SQS queue"""
-    BROKER_TRANSPORT_QUEUE_NAME_PREFIX: str = "CELERY_CODERUNR_"
-    """SQS queue name prefix used to create queue"""
+    BROKER_TRANSPORT_OPTIONS: TransportOptions = TransportOptions()
+    """Broker transport options"""
+    TASK_DEFAULT_QUEUE: str = aws_config.SQS_QUEUE_NAME
+    """Default Celery queue name, must be present in SQS predefined_queues."""
     TASK_SERIALIZER: str = "json"
     """Serializer used for outbound task payloads."""
     ACCEPT_CONTENT: list[str] = ["json"]
@@ -45,15 +61,15 @@ class CeleryConfig(BaseSettings):
     @property
     def broker_transport_options(self) -> dict[str, Any]:
         return {
-            "visibility_timeout": self.BROKER_TRANSPORT_VISIBILITY_TIMEOUT_SECONDS,
-            "max_retries": self.BROKER_TRANSPORT_MAX_RETRIES,
+            "visibility_timeout": self.BROKER_TRANSPORT_OPTIONS.VISIBILITY_TIMEOUT_SECONDS,
+            "max_retries": self.BROKER_TRANSPORT_OPTIONS.MAX_RETRIES,
             "retry_policy": {
-                "timeout": self.BROKER_TRANSPORT_RETRY_TIMEOUT_SECONDS,
+                "timeout": self.BROKER_TRANSPORT_OPTIONS.RETRY_TIMEOUT_SECONDS,
             },
-            "polling_interval": self.BROKER_TRANSPORT_POLLING_INTERVAL_SECONDS,
-            "wait_time_seconds": self.BROKER_TRANSPORT_WALL_TIME_SECONDS_SECONDS,
-            "region": self.BROKER_TRANSPORT_AWS_REGION,
-            "queue_name_prefix": self.BROKER_TRANSPORT_QUEUE_NAME_PREFIX,
+            "polling_interval": self.BROKER_TRANSPORT_OPTIONS.POLLING_INTERVAL_SECONDS,
+            "wait_time_seconds": self.BROKER_TRANSPORT_OPTIONS.WALL_TIME_SECONDS_SECONDS,
+            "region": self.BROKER_TRANSPORT_OPTIONS.AWS_REGION,
+            "predefined_queues": self.BROKER_TRANSPORT_OPTIONS.PREDEFINED_QUEUES,
         }
 
     @property
@@ -64,6 +80,8 @@ class CeleryConfig(BaseSettings):
             "broker_connection_retry_on_startup": self.BROKER_CONNECTION_RETRY_ON_STARTUP,
             "broker_connection_max_retries": self.BROKER_CONNECTION_MAX_RETRIES,
             "broker_transport_options": self.broker_transport_options,
+            "task_default_queue": self.TASK_DEFAULT_QUEUE,
+            "task_queues": (Queue(self.TASK_DEFAULT_QUEUE),),
             "task_serializer": self.TASK_SERIALIZER,
             "accept_content": self.ACCEPT_CONTENT,
             "result_serializer": self.RESULT_SERIALIZER,
