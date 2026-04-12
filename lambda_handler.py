@@ -8,7 +8,7 @@ from alembic.config import Config
 from loguru import logger
 from mangum import Mangum
 
-from db.seeds.languages import seed_sync
+from db.seeds.languages import seed_languages_sync
 from main import app
 
 _alembic_config_path = Path(__file__).resolve().parent / "alembic.ini"
@@ -30,7 +30,7 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         return {"statusCode": 200, "body": "Migration run successfully"}
 
     if event_type == "Seed_Languages":
-        seed_sync()
+        seed_languages_sync()
         return {"statusCode": 200, "body": "Languages seed successfully"}
 
     return asgi_handler(event, context)
