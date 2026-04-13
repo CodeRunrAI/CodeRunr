@@ -9,6 +9,20 @@ from config.aws import aws_config
 from db.session import _build_url
 
 
+def _build_predefined_queues():
+    queues: Dict = {aws_config.SQS_QUEUE_NAME: {"url": aws_config.SQS_QUEUE_URL}}
+
+    if aws_config.ACCESS_KEY_ID and aws_config.SECRET_ACCESS_KEY:
+        queues[aws_config.SQS_QUEUE_NAME]["access_key_id"] = (
+            aws_config.ACCESS_KEY_ID.get_secret_value()
+        )
+        queues[aws_config.SQS_QUEUE_NAME]["secret_access_key"] = (
+            aws_config.SECRET_ACCESS_KEY.get_secret_value()
+        )
+
+    return queues
+
+
 class TransportOptions(BaseModel):
     MAX_RETRIES: int = 10
     """Maximum broker transport retry attempts for transient connection errors."""
@@ -20,15 +34,9 @@ class TransportOptions(BaseModel):
     """Delay, in seconds, between queue polling attempts when no messages are available."""
     WALL_TIME_SECONDS: float = 15.0
     """SQS long polling wait time, in seconds, used to reduce empty and false-empty ReceiveMessage responses."""
-    PREDEFINED_QUEUES: Dict = {
-        aws_config.SQS_QUEUE_NAME: {
-            "url": aws_config.SQS_QUEUE_URL,
-            "access_key_id": aws_config.ACCESS_KEY_ID.get_secret_value(),
-            "secret_access_key": aws_config.SECRET_ACCESS_KEY.get_secret_value(),
-        }
-    }
+    PREDEFINED_QUEUES: Dict = _build_predefined_queues()
     """Predefined queues"""
-    AWS_REGION: str = aws_config.REGION
+    AWS_REGION: str = aws_config.REGION or ""
     """AWS Region"""
 
 
@@ -96,15 +104,18 @@ class CeleryConfig(BaseSettings):
 
 
 def _create_broker_url() -> str:
-    AWS_ACCESS_KEY_ID = aws_config.ACCESS_KEY_ID.get_secret_value()
-    AWS_SECRET_ACCESS_KEY = aws_config.SECRET_ACCESS_KEY.get_secret_value()
+    if aws_config.ACCESS_KEY_ID and aws_config.SECRET_ACCESS_KEY:
+        AWS_ACCESS_KEY_ID = aws_config.ACCESS_KEY_ID.get_secret_value()
+        AWS_SECRET_ACCESS_KEY = aws_config.SECRET_ACCESS_KEY.get_secret_value()
 
-    # URL-encode ONLY for broker URL
-    aws_access_key_encoded = safequote(AWS_ACCESS_KEY_ID)
-    aws_secret_key_encoded = safequote(AWS_SECRET_ACCESS_KEY)
+        # URL-encode ONLY for broker URL
+        aws_access_key_encoded = safequote(AWS_ACCESS_KEY_ID)
+        aws_secret_key_encoded = safequote(AWS_SECRET_ACCESS_KEY)
 
-    # Use encoded credentials in broker URL
-    return f"sqs://{aws_access_key_encoded}:{aws_secret_key_encoded}@"
+        # Use encoded credentials in broker URL
+        return f"sqs://{aws_access_key_encoded}:{aws_secret_key_encoded}@"
+
+    return "sqs://"
 
 
 def _create_backend_url() -> str:

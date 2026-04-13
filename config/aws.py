@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -5,11 +6,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class AWSConfig(BaseSettings):
     """AWS Config (All the env variables should start with AWS_)"""
 
-    ACCESS_KEY_ID: SecretStr = ""
+    ACCESS_KEY_ID: Optional[SecretStr] = None
     """Access key id"""
-    SECRET_ACCESS_KEY: SecretStr = ""
+    SECRET_ACCESS_KEY: Optional[SecretStr] = None
     """Secret access key"""
-    REGION: str = ""
+    REGION: Optional[str] = None
     """Region, e.g. ap-south-1"""
     SQS_QUEUE_NAME: str
     """SQS Queue Name"""
