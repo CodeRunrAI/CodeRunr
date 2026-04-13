@@ -108,3 +108,28 @@ services:
         condition: service_healthy
       localstack:
         condition: service_healthy
+
+  lambda:
+    build:
+      context: .
+      dockerfile: Dockerfile.lambda
+    ports:
+      - "8765:8080"
+    environment:
+      AUTH_TOKEN: test
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: sandbox
+      POSTGRES_PASSWORD: sandbox
+      POSTGRES_DB: coderunr
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_REGION: us-east-1
+      AWS_SQS_QUEUE_NAME: Coderunr_queue_1.fifo
+      AWS_SQS_QUEUE_URL: "http://localstack:4566/000000000000/Coderunr_queue.fifo"
+      AWS_ENDPOINT_URL: http://localstack:4566
+    depends_on:
+      db:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy

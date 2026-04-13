@@ -14,4 +14,22 @@ RUN uv export --frozen --no-dev --no-emit-project --format requirements.txt --ou
 
 COPY . .
 
+# ---------------------------------------------------------------------------
+# Required environment variables – set these in the Lambda function config
+# (AWS Console → Configuration → Environment variables, or via IaC/SAM/CDK).
+#
+#   AUTH_TOKEN              – X-API-KEY shared secret for request auth
+#   POSTGRES_HOST           – RDS host
+#   POSTGRES_PORT           – RDS port (default 5432)
+#   POSTGRES_USER           – RDS username
+#   POSTGRES_PASSWORD       – RDS password
+#   POSTGRES_DB             – RDS database name
+#   AWS_SQS_QUEUE_NAME      – SQS queue name (e.g. Coderunr_queue_1.fifo)
+#   AWS_SQS_QUEUE_URL       – Full SQS queue URL
+#   AWS_REGION              – AWS region (e.g. ap-south-1)
+#
+# AWS credentials (ACCESS_KEY_ID / SECRET_ACCESS_KEY) should NOT be set here;
+# attach an IAM execution role to the Lambda function instead.
+# ---------------------------------------------------------------------------
+
 CMD ["lambda_handler.handler"]
