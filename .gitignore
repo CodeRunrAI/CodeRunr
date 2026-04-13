@@ -21,3 +21,6 @@ tmp/
 
 # IDE
 .vscode
+
+# Localstack
+.localstack
