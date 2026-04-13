@@ -1,7 +1,6 @@
 from typing import Any, Dict
 
 from kombu import Queue
-from kombu.utils.url import safequote
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -11,15 +10,6 @@ from db.session import _build_url
 
 def _build_predefined_queues():
     queues: Dict = {aws_config.SQS_QUEUE_NAME: {"url": aws_config.SQS_QUEUE_URL}}
-
-    if aws_config.ACCESS_KEY_ID and aws_config.SECRET_ACCESS_KEY:
-        queues[aws_config.SQS_QUEUE_NAME]["access_key_id"] = (
-            aws_config.ACCESS_KEY_ID.get_secret_value()
-        )
-        queues[aws_config.SQS_QUEUE_NAME]["secret_access_key"] = (
-            aws_config.SECRET_ACCESS_KEY.get_secret_value()
-        )
-
     return queues
 
 
@@ -104,17 +94,6 @@ class CeleryConfig(BaseSettings):
 
 
 def _create_broker_url() -> str:
-    if aws_config.ACCESS_KEY_ID and aws_config.SECRET_ACCESS_KEY:
-        AWS_ACCESS_KEY_ID = aws_config.ACCESS_KEY_ID.get_secret_value()
-        AWS_SECRET_ACCESS_KEY = aws_config.SECRET_ACCESS_KEY.get_secret_value()
-
-        # URL-encode ONLY for broker URL
-        aws_access_key_encoded = safequote(AWS_ACCESS_KEY_ID)
-        aws_secret_key_encoded = safequote(AWS_SECRET_ACCESS_KEY)
-
-        # Use encoded credentials in broker URL
-        return f"sqs://{aws_access_key_encoded}:{aws_secret_key_encoded}@"
-
     return "sqs://"
 
 
