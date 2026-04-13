@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 LOG_LEVEL_TYPES: TypeAlias = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
-LOG_FORMAT_STR = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
+LOG_FORMAT_STR = "{level} | {name}:{function}:{line} - {message}"
 
 
 class CORSConfig(BaseSettings):
