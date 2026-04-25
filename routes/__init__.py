@@ -10,6 +10,11 @@ api_router = APIRouter(prefix=settings.API_V1_STR)
 
 @api_router.get("/health", tags=["Health"])
 async def health():
+    """
+    Health check endpoint.
+    
+    Returns the current operational status of the API.
+    """
     return {"status": "ok"}
 
 

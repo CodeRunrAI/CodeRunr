@@ -2,7 +2,7 @@ import asyncio
 
 from sqlalchemy import select
 
-from db.session import AsyncSessionLocal
+from db.session import AsyncSessionLocal, SyncSessionLocal
 from db.models.language import Language
 
 
@@ -74,7 +74,7 @@ LANGUAGES = [
 ]
 
 
-async def seed():
+async def seed_languages_async():
     async with AsyncSessionLocal() as db:
         existing = await db.execute(select(Language.name))
         existing_names = set(existing.scalars().all())
@@ -93,6 +93,26 @@ async def seed():
         print(f"\nSeeded {added} language(s), skipped {len(LANGUAGES) - added}.")
 
 
+def seed_languages_sync() -> None:
+    """Synchronous variant — safe to call from Lambda regardless of event-loop state."""
+    with SyncSessionLocal() as db:
+        existing = db.execute(select(Language.name))
+        existing_names = set(existing.scalars().all())
+
+        added = 0
+        for lang in LANGUAGES:
+            if lang["name"] in existing_names:
+                print(f"  ⏭  {lang['name']} (already exists)")
+                continue
+
+            db.add(Language(**lang))
+            added += 1
+            print(f"  ✓  {lang['name']}")
+
+        db.commit()
+        print(f"\nSeeded {added} language(s), skipped {len(LANGUAGES) - added}.")
+
+
 if __name__ == "__main__":
     print("Seeding languages...\n")
-    asyncio.run(seed())
+    asyncio.run(seed_languages_async())

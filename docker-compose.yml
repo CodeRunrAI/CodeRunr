@@ -25,6 +25,26 @@ services:
       timeout: 3s
       retries: 5
 
+  localstack:
+    image: localstack/localstack:3
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4566:4566"
+    environment:
+      - SERVICES=sqs
+      - DEBUG=1
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - AWS_SQS_QUEUE_NAME=Coderunr_queue.fifo
+    volumes:
+      - "./.localstack:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./scripts/init-localstack.sh:/etc/localstack/init/ready.d/init-localstack.sh"
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   api:
     build:
       context: .
@@ -38,14 +58,21 @@ services:
       POSTGRES_USER: sandbox
       POSTGRES_PASSWORD: sandbox
       POSTGRES_DB: coderunr
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
-      AUTH_TOKEN: ${AUTH_TOKEN}
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_SQS_QUEUE_NAME: Coderunr_queue_1.fifo
+      AWS_SQS_QUEUE_URL: "http://localstack:4566/000000000000/Coderunr_queue.fifo"
+      AWS_REGION: test
+      AWS_ENDPOINT_URL: http://localstack:4566
+      AUTH_TOKEN: test
     ports:
       - 8080:8000
     depends_on:
       db:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      localstack:
         condition: service_healthy
 
   worker:
@@ -61,8 +88,13 @@ services:
       POSTGRES_USER: sandbox
       POSTGRES_PASSWORD: sandbox
       POSTGRES_DB: coderunr
-      REDIS_URL: redis://redis:6379/0
-      AUTH_TOKEN: ${AUTH_TOKEN}
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_SQS_QUEUE_NAME: Coderunr_queue_1.fifo
+      AWS_SQS_QUEUE_URL: "http://localstack:4566/000000000000/Coderunr_queue.fifo"
+      AWS_REGION: test
+      AWS_ENDPOINT_URL: http://localstack:4566
+      AUTH_TOKEN: test
     privileged: true
     cgroup: host
     volumes:
@@ -73,4 +105,31 @@ services:
       db:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+
+  lambda:
+    build:
+      context: .
+      dockerfile: Dockerfile.lambda
+    ports:
+      - "8765:8080"
+    environment:
+      AUTH_TOKEN: test
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: sandbox
+      POSTGRES_PASSWORD: sandbox
+      POSTGRES_DB: coderunr
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_REGION: us-east-1
+      AWS_SQS_QUEUE_NAME: Coderunr_queue_1.fifo
+      AWS_SQS_QUEUE_URL: "http://localstack:4566/000000000000/Coderunr_queue.fifo"
+      AWS_ENDPOINT_URL: http://localstack:4566
+    depends_on:
+      db:
+        condition: service_healthy
+      localstack:
         condition: service_healthy

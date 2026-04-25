@@ -5,11 +5,17 @@ __all__ = [
     "settings",
     "celery_config",
     "sandbox_config",
+    "aws_config",
     "configure_logger",
 ]
 
 
 def __getattr__(name: str):
+    if name == "aws_config":
+        from config.aws import aws_config
+
+        return aws_config
+
     if name == "celery_config":
         from config.celery import celery_config
 

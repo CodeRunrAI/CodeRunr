@@ -5,12 +5,13 @@ from pydantic import SecretStr, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 if TYPE_CHECKING:
+    from config.aws import AWSConfig
     from config.celery import CeleryConfig
     from config.sandbox import SandboxConfig
 
 
 LOG_LEVEL_TYPES: TypeAlias = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
-LOG_FORMAT_STR = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
+LOG_FORMAT_STR = "{level} | {name}:{function}:{line} - {message}"
 
 
 class CORSConfig(BaseSettings):
@@ -58,9 +59,6 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: SecretStr = Field(..., description="Database password")
     POSTGRES_DB: SecretStr = Field(..., description="Database name")
 
-    # QUEUE/Cache (Redis)
-    REDIS_URL: SecretStr = Field(..., description="Redis in-memory db URL")
-
     # Outbound HTTP
     HTTP_TIMEOUT: float = 10.0
     HTTP_CONNECT_TIMEOUT: float = 5.0
@@ -74,6 +72,12 @@ class Settings(BaseSettings):
         from config.sandbox import sandbox_config
 
         return sandbox_config
+
+    @property
+    def AWS_CONFIG(self) -> "AWSConfig":
+        from config.aws import aws_config
+
+        return aws_config
 
     @property
     def CELERY_CONFIG(self) -> "CeleryConfig":

@@ -1,8 +1,6 @@
-import asyncio
 from logging.config import fileConfig
 
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy import pool
+from sqlalchemy import create_engine, pool
 from alembic import context
 
 from db.session import Base, _build_url
@@ -21,8 +19,9 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 target_metadata = Base.metadata
 
-# Set the DB URL (uses postgresql+asyncpg)
-config.set_main_option("sqlalchemy.url", _build_url("postgresql+asyncpg"))
+# Set the DB URL (uses postgresql+psycopg2 — sync driver avoids event-loop
+# conflicts when running inside AWS Lambda before Mangum handles API requests)
+config.set_main_option("sqlalchemy.url", _build_url("postgresql+psycopg2"))
 
 
 def run_migrations_offline() -> None:
@@ -49,26 +48,22 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
-def do_run_migrations(connection):
-    context.configure(connection=connection, target_metadata=target_metadata)
-    with context.begin_transaction():
-        context.run_migrations()
-
-
-async def run_migrations_online() -> None:
-    """Run migrations in 'online' mode using async engine."""
-    connectable = create_async_engine(
-        _build_url("postgresql+asyncpg"),
+def run_migrations_online() -> None:
+    """Run migrations in 'online' mode using a sync engine."""
+    connectable = create_engine(
+        _build_url("postgresql+psycopg2"),
         poolclass=pool.NullPool,
     )
 
-    async with connectable.connect() as connection:
-        await connection.run_sync(do_run_migrations)
+    with connectable.connect() as connection:
+        context.configure(connection=connection, target_metadata=target_metadata)
+        with context.begin_transaction():
+            context.run_migrations()
 
-    await connectable.dispose()
+    connectable.dispose()
 
 
 if context.is_offline_mode():
     run_migrations_offline()
 else:
-    asyncio.run(run_migrations_online())
+    run_migrations_online()

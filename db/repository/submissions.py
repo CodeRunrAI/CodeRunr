@@ -95,7 +95,7 @@ async def update_submission(
 
     Args:
         db (AsyncSession): The database session.
-        token (UUID): The token of the submission to delete.
+        token (UUID): The token of the submission to be updated.
 
     Returns:
         Submission | None: The submission if found, None otherwise.

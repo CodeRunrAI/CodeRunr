@@ -3,6 +3,7 @@ from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field, HttpUrl, AfterValidator
+from utils.ssrf_guard import assert_public_url
 
 
 def validate_string_size_in_kb(v: str) -> str:
@@ -54,7 +55,7 @@ class SubmissionCreate(BaseModel):
     """If true, then each process or thread can utilize cpu_time_limit individually"""
     limit_per_process_and_thread_memory_usages: bool = False
     """If true, then each process or thread can utilize memory_limit individually"""
-    webhook_url: Optional[HttpUrl] = None
+    webhook_url: Optional[Annotated[HttpUrl, AfterValidator(assert_public_url)]] = None
     """Optional webhook url to post the submission data"""
 
 

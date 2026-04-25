@@ -22,7 +22,7 @@ def post_data_on_callback(callback_url: str, data: dict) -> None:
     response.raise_for_status()
 
 
-@app.task
+@app.task(acks_late=True)
 def submit_submission_task(submission_token: str) -> str:
     """
     Main task function invoked by the Celery worker.
